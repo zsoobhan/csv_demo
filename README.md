@@ -1,5 +1,7 @@
 # Demo CSV Parser
 
+[![Build Status](https://travis-ci.org/zsoobhan/csv_demo.svg?branch=master)](https://travis-ci.org/zsoobhan/csv_demo)
+
 ## Installation
 
 It is recommended that the installation is performed from within a virtual
