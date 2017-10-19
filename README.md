@@ -6,13 +6,14 @@ It is recommended that the installation is performed from within a virtual
 environment. See virtualenv docs for information on how to set one up.
 
 ```shell
-pip install -r requirements.txt
-
+    pip install -r requirements.txt
 ```
 
-## Testing
+## Tests
 
 ```shell
-py.test tests/
-
+    py.test --flake8
 ```
+
+## Usage
+

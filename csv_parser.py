@@ -14,9 +14,12 @@ class CSVParser:
     """
 
     directory = None
-    parsed_values = None
 
-    def __init__(self, **kwargs):
+    # internal
+    _parsed_values = None
+    _errors = None
+
+    def __init__(self, directory: str, **kwargs):
         """
         Sets the expected attributes on the instance if passed to init.
         """
@@ -45,3 +48,12 @@ class CSVParser:
         Prints the contents of self.parsed_values to the screen
 
         """
+
+    def checks(self):
+        pass
+
+    def check_directory(self):
+        pass
+
+    def __repr__(self):
+        return ''
