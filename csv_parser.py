@@ -49,6 +49,7 @@ class CSVParser:
         >>> }
 
         """
+
         for filepath in glob.glob(os.path.join(self.directory, '*.csv')):
             self._get_clean_data(filepath)
 
@@ -58,6 +59,7 @@ class CSVParser:
             #  generate a dict for each column with the exception of
             #  the 'description'
             for header in matrix.drop('description', axis=1).axes[1]:
+
                 value = matrix[header][0]
                 function_key = utils.DAYS_MAP[header]  # e.g. 'square'
                 function_value = utils.generate_function_value(
@@ -67,15 +69,17 @@ class CSVParser:
                 description = matrix['description'][0]
 
                 matrix_data.append(
+                    # append values in expected format
                     {
                         'day': header,
                         'description': utils.generate_description(
-                            description, value
+                            description, function_value
                         ),
                         function_key: function_value,
                         'value': value,
                     }
                 )
+
             # append generated dictionaries to instance
             self._data[filepath] = matrix_data
         return self._data
@@ -86,21 +90,22 @@ class CSVParser:
         and updates self._clean_data with the resulting matrices
         """
         data = pandas.read_csv(filepath)
-        print(f'Parsing {filepath}')
+        print(f'INFO: Parsing {filepath}')
 
         for column in data.axes[1]:
+            original_column_data = data.pop(column)
             try:
                 # split day ranges (e.g. 'mon-tue') into individual
-                # columns (['mon', ''tue'])
+                # columns (['mon', ''tue']) and copy the data over
                 for valid_column in utils.get_valid_columns(column):
-                    data[valid_column] = data[column]  # copy data
-
-                # if it was a range, drop the original column
-                if column != valid_column:
-                    data = data.drop(column, axis=1)
+                    data.insert(
+                        len(data.axes[1]),  # insert at end
+                        valid_column,  # new column name
+                        original_column_data  # copy data from original column
+                    )
 
             except utils.InvalidColumnException:
-                data = data.drop(column, axis=1)
+                print(f'INFO: ignoring {column} from {filepath}')
 
         self._clean_data[filepath] = data
 
