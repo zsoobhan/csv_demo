@@ -1,59 +1,110 @@
 #!/usr/bin/env python3
 
+import glob
+import os
+import pandas
+
+import utils
+
 
 class CSVParser:
     """
     CSVParser will parse all of the files matching the glob '*.csv'
     located in `self.directory` when `self.parse()` is run.
 
-    n.b. `__init__` will only accept keyword arguments
-
-    params::
+    ::params::
     :directory: the relative location of the directory containing the csv files
-
+                defaults to './csv_files/'
     """
 
     directory = None
 
     # internal
-    _parsed_values = None
-    _errors = None
+    _clean_data = {}
+    _data = {}
 
-    def __init__(self, directory: str, **kwargs):
+    def __init__(self, directory: str=''):
         """
-        Sets the expected attributes on the instance if passed to init.
+        Sets the directory value
         """
-        expected_attributes = ['directory']
-
-        for attr in expected_attributes:
-            setattr(self, attr, kwargs.get(attr))
+        if not self.directory:
+            self.directory = './csv_files/'
 
     def parse(self):
         """
-        Parses the files in self.directory and returns values in a dictionary
+        Parses the csv files in self.directory, populates self._data  and
+        returns self._data
 
-        returns:
-        >>> {
-        >>>     'day': value of day (mon, tue, wed, thu, fri),
-        >>>     'description': verbose description ,
-        >>>     'value': value,
-        >>>     'square'|'double': mathematical evaluation pertaining to `value`
+        example of data generated:
+
+        >>> { 'filepath':
+        >>>     [
+        >>>         {
+        >>>             'day': value of day (mon, tue, wed, thu, fri),
+        >>>             'description': verbose description ,
+        >>>             'value': value,
+        >>>             'square'|'double': mathematical evaluation of `value`
+        >>>         }, ...
+        >>>     ]
         >>> }
 
         """
-        pass
+        for filepath in glob.glob(os.path.join(self.directory, '*.csv')):
+            self._get_clean_data(filepath)
 
-    def output(self):
+        for filepath, matrix in self._clean_data.items():
+            matrix_data = []
+
+            #  generate a dict for each column with the exception of
+            #  the 'description'
+            for header in matrix.drop('description', axis=1).axes[1]:
+                value = matrix[header][0]
+                function_key = utils.DAYS_MAP[header]  # e.g. 'square'
+                function_value = utils.generate_function_value(
+                    function_key,
+                    value
+                )
+                description = matrix['description'][0]
+
+                matrix_data.append(
+                    {
+                        'day': header,
+                        'description': utils.generate_description(
+                            description, value
+                        ),
+                        function_key: function_value,
+                        'value': value,
+                    }
+                )
+            # append generated dictionaries to instance
+            self._data[filepath] = matrix_data
+        return self._data
+
+    def _get_clean_data(self, filepath):
         """
-        Prints the contents of self.parsed_values to the screen
-
+        Get's data from csv files and transforms ranges into individual columns
+        and updates self._clean_data with the resulting matrices
         """
+        data = pandas.read_csv(filepath)
+        print(f'Parsing {filepath}')
 
-    def checks(self):
-        pass
+        for column in data.axes[1]:
+            try:
+                # split day ranges (e.g. 'mon-tue') into individual
+                # columns (['mon', ''tue'])
+                for valid_column in utils.get_valid_columns(column):
+                    data[valid_column] = data[column]  # copy data
 
-    def check_directory(self):
-        pass
+                # if it was a range, drop the original column
+                if column != valid_column:
+                    data = data.drop(column, axis=1)
+
+            except utils.InvalidColumnException:
+                data = data.drop(column, axis=1)
+
+        self._clean_data[filepath] = data
 
     def __repr__(self):
-        return ''
+        return (
+            f'CSVParser: parsed={self._data.keys() if self._data else None}'
+        )

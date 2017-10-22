@@ -3,7 +3,14 @@
 import re
 
 
-DAYS = ['mon', 'tue', 'wed', 'thu', 'fri']
+DAYS_MAP = {
+    'mon': 'square',
+    'tue': 'square',
+    'wed': 'square',
+    'thu': 'double',
+    'fri': 'double',
+}
+DAYS = list(DAYS_MAP.keys())  # N.B. python3.6 dicts remember the order of keys
 DAYS_RE = '|'.join(DAYS)
 
 FUNCTION_MAP = {
@@ -24,8 +31,8 @@ class InvalidFunctionKeyException(CSVParserException):
     pass
 
 
-def generate_description(
-    description: str, function_key: str, value: int, function_map=FUNCTION_MAP
+def generate_function_value(
+    function_key: str, value: int, function_map=FUNCTION_MAP
 ):
     """
     concatenates the description str with evaluated function
@@ -41,16 +48,32 @@ def generate_description(
             f'{function_key} not in {function_map.keys()}'
         )
 
+    return function(value)  # evaluates function
+
+
+def generate_description(description: str, final_value: int):
+    """
+    concatenates the description str with final_value
+
+    example return:
+        >>> 'DESCRIPTION 99'
+    """
+
     return '{description} {final_value}'.format(
         description=description,
-        final_value=function(value)  # evaluates function
+        final_value=final_value
     )
 
 
-def column_valid(label: str, days_re=DAYS_RE):
+def get_valid_columns(label: str, days_re=DAYS_RE):
     '''
-    checks if label is valid and returns list of valid days
+    checks if label is valid and returns list of valid day interval or
+    column name
     '''
+
+    if label == 'description':
+        return [label]
+
     days = label.split('-')
 
     if len(days) > 2:
@@ -62,7 +85,7 @@ def column_valid(label: str, days_re=DAYS_RE):
         if not re.findall(days_re, day):
             raise InvalidColumnException(f'label ({label}) not in ({days_re})')
 
-    return days
+    return get_days_from_range(days)
 
 
 def get_days_from_range(days: list, master_list=DAYS):

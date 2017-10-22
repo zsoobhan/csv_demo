@@ -19,3 +19,7 @@ environment. See virtualenv docs for information on how to set one up.
 
 ## Usage
 
+## Continuous Integrations
+
+The tests are run automatically by TravisCI on pushes to master.
+See `.travis.yml` for details

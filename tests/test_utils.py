@@ -15,35 +15,39 @@ class TestGlobals(object):
     def test_days_config(self):
         assert utils.DAYS == ['mon', 'tue', 'wed', 'thu', 'fri']
         assert utils.DAYS_RE == 'mon|tue|wed|thu|fri'
+        assert utils.DAYS_MAP == {
+            'mon': 'square',
+            'tue': 'square',
+            'wed': 'square',
+            'thu': 'double',
+            'fri': 'double',
+        }
 
 
-class TestGenerateDescription(object):
+class TestGenerateFunctionValue(object):
     function_map = {
         'cube': lambda x: x**3,
         'quad': lambda x: x**4,
     }
 
     def test_custom_function_map(self):
-        result = utils.generate_description(
-            'foo bar',
+        result = utils.generate_function_value(
             'cube',
             3,
             function_map=self.function_map
         )
-        assert result == 'foo bar 27'
+        assert result == 27
 
     def test_default_function_map(self):
-        result = utils.generate_description(
-            'foo bar',
+        result = utils.generate_function_value(
             'double',
             3,
         )
-        assert result == 'foo bar 6'
+        assert result == 6
 
     def test_correct_exception_raised(self):
         with pytest.raises(utils.InvalidFunctionKeyException) as exc:
-            utils.generate_description(
-                'foo bar',
+            utils.generate_function_value(
                 'invalid',
                 3,
                 function_map=self.function_map
@@ -51,28 +55,38 @@ class TestGenerateDescription(object):
         assert str(exc.value) == "invalid not in dict_keys(['cube', 'quad'])"
 
 
-class TestColumnValid(object):
+class TestGenerateDescription(object):
+
+    def test_custom_function_map(self):
+        result = utils.generate_description(
+            'foo bar',
+            3,
+        )
+        assert result == 'foo bar 3'
+
+
+class TestGetValidColumns(object):
     regex_pattern = 'foo|bar'
 
-    def test_valid_custom_pattern(self):
-        assert utils.column_valid('foo', days_re=self.regex_pattern) == ['foo']
+    def test_valid_description(self):
+        assert utils.get_valid_columns('description') == ['description']
 
     def test_valid_default_pattern(self):
-        assert utils.column_valid('wed') == ['wed']
+        assert utils.get_valid_columns('wed') == ['wed']
 
     def test_invalid_value(self):
         with pytest.raises(utils.InvalidColumnException) as exc:
-            utils.column_valid('baz', days_re=self.regex_pattern)
+            utils.get_valid_columns('baz', days_re=self.regex_pattern)
         assert str(exc.value) == 'label (baz) not in (foo|bar)'
 
     def test_invalid_range_not_in_regex(self):
         with pytest.raises(utils.InvalidColumnException) as exc:
-            utils.column_valid('foo-baz', days_re=self.regex_pattern)
+            utils.get_valid_columns('foo-baz', days_re=self.regex_pattern)
         assert str(exc.value) == 'label (foo-baz) not in (foo|bar)'
 
     def test_invalid_range_too_many_dashes(self):
         with pytest.raises(utils.InvalidColumnException) as exc:
-            utils.column_valid('foo-baz-', days_re=self.regex_pattern)
+            utils.get_valid_columns('foo-baz-', days_re=self.regex_pattern)
         assert str(exc.value) == 'label (foo-baz-) has multiple -, 1 expected'
 
 
